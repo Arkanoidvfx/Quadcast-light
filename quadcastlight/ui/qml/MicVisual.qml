@@ -34,6 +34,14 @@ Item {
     readonly property real bandBottomY: bodyTop + bodyH * 0.99
     readonly property real rigCenterY: bodyTop + (bodyH + unit * 2.6) / 2
 
+    // The lit zone, in rig coordinates. The glow behind the mic and the
+    // bloom around it cannot anchor to the grille - it is a grandchild of
+    // the rig, and QML only anchors to a parent or a sibling - so all three
+    // read their geometry from here instead.
+    readonly property real meshW: bodyW * 0.84
+    readonly property real meshH: bodyH * 0.54
+    readonly property real meshTop: bodyTop + bodyH * 0.13
+
     readonly property color shell: connected ? "#1b1f27" : "#181c23"
     readonly property color band: connected ? "#b9a882" : "#6d6858"
     readonly property color frame: "#2b3240"
@@ -62,7 +70,8 @@ Item {
 
         // Light thrown onto the surface behind the mic.
         Rectangle {
-            anchors.centerIn: mesh
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: root.meshTop + root.meshH / 2 - height / 2
             width: root.bodyW * 4.2
             height: root.bodyH * 1.1
             radius: width / 2
@@ -80,7 +89,10 @@ Item {
         // behind: a halo around the lit area, never a blur over it.
         MultiEffect {
             source: mesh
-            anchors.fill: mesh
+            x: (root.width - root.meshW) / 2
+            y: root.meshTop
+            width: root.meshW
+            height: root.meshH
             autoPaddingEnabled: true
             blurEnabled: true
             blurMax: 40
@@ -192,10 +204,10 @@ Item {
             // to the lower one.
             MicMesh {
                 id: mesh
-                x: parent.width * 0.08
-                y: parent.height * 0.13
-                width: parent.width * 0.84
-                height: parent.height * 0.54
+                x: (parent.width - root.meshW) / 2
+                y: root.meshTop - root.bodyTop
+                width: root.meshW
+                height: root.meshH
                 upperColor: root.connected ? root.upperColor : "#151a21"
                 lowerColor: root.connected ? root.lowerColor : "#131820"
             }
