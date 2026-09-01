@@ -28,14 +28,19 @@ jobs:
         run: pyinstaller --noconfirm QuadcastLight.spec
       - name: Check the exe starts
         # A packaged Qt Quick app fails at runtime, not at build time, when a
-        # QML module did not make it into the bundle. Without a mic present the
-        # app exits after acquiring its single-instance mutex, which is enough
-        # to prove the bundle boots.
+        # QML module or Qt plugin did not make it into the bundle, and it dies
+        # within seconds of starting. The runner has no microphone, which the
+        # app tolerates: it sits in its event loop either way. So staying alive
+        # is the pass, and exiting on its own is the failure.
         run: |
           $process = Start-Process -FilePath dist\QuadcastLight.exe -PassThru
-          Start-Sleep -Seconds 25
-          if (-not $process.HasExited) { $process.Kill() }
-          if (-not (Test-Path dist\QuadcastLight.exe)) { exit 1 }
+          Start-Sleep -Seconds 30
+          if ($process.HasExited) {
+            Write-Host "the packaged app exited on its own, code $($process.ExitCode)"
+            exit 1
+          }
+          $process.Kill()
+          Write-Host "still running after 30s"
       - uses: actions/upload-artifact@v4
         with:
           name: QuadcastLight-exe
