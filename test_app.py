@@ -231,6 +231,33 @@ class LauncherTests(unittest.TestCase):
                 autostart.set_enabled(False)
                 self.assertFalse(autostart.enabled())
 
+    def test_frozen_build_launches_the_exe_itself(self):
+        """A packaged build has no interpreter and no .pyw beside it."""
+        with mock.patch.object(sys, "frozen", True, create=True):
+            with mock.patch.object(sys, "executable", r"C:\Apps\QuadcastLight.exe"):
+                self.assertEqual(
+                    autostart.launch_command(), [r"C:\Apps\QuadcastLight.exe"]
+                )
+
+    def test_source_build_launches_the_entry_script(self):
+        command = autostart.launch_command()
+        self.assertEqual(len(command), 2)
+        self.assertTrue(command[0].lower().endswith(("pythonw.exe", "python.exe")))
+        self.assertTrue(command[1].endswith(autostart.ENTRY_SCRIPT))
+
+    def test_startup_launcher_quotes_a_path_with_spaces(self):
+        """Program Files is the normal install location for a packaged build."""
+        import tempfile
+
+        exe = r"C:\Program Files\QuadcastLight\QuadcastLight.exe"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = os.path.join(temp_dir, "QuadcastLight.cmd")
+            with mock.patch.object(autostart, "launcher_path", return_value=path):
+                with mock.patch.object(autostart, "launch_command", return_value=[exe]):
+                    autostart.set_enabled(True)
+                with open(path, encoding="utf-8") as handle:
+                    self.assertIn(f'"{exe}"', handle.read())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,7 +16,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
-from .. import logging_setup, singleinstance
+from .. import autostart, logging_setup, singleinstance
 from .bridge import Bridge
 
 QML_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qml")
@@ -124,22 +124,20 @@ class Application:
     def restart(self):
         import subprocess
 
-        script = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-            "miclight_gui.pyw",
+        command = autostart.launch_command()
+        # Wait for this process to release the single-instance mutex, then
+        # start again. PowerShell can wait on a pid, and a frozen build has no
+        # interpreter to run a Python helper with: sys.executable is this app.
+        quoted = [part.replace("'", "''") for part in command]
+        script = (
+            f"Wait-Process -Id {os.getpid()} -Timeout 30 "
+            f"-ErrorAction SilentlyContinue; "
+            f"Start-Process -FilePath '{quoted[0]}'"
         )
-        pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
-        exe = pythonw if os.path.exists(pythonw) else sys.executable
-        # Wait for this process to release the single-instance mutex first.
-        helper = (
-            "import ctypes,os,subprocess,sys;"
-            "h=ctypes.windll.kernel32.OpenProcess(0x00100000,False,%d);"
-            "ctypes.windll.kernel32.WaitForSingleObject(h,30000) if h else None;"
-            "subprocess.Popen([%r,%r],cwd=%r,creationflags=0x00000008|0x08000000,close_fds=True)"
-            % (os.getpid(), exe, script, os.path.dirname(script))
-        )
+        if len(quoted) > 1:
+            script += " -ArgumentList " + ",".join(f"'{part}'" for part in quoted[1:])
         subprocess.Popen(
-            [exe, "-c", helper],
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
             creationflags=0x00000008 | 0x08000000,  # DETACHED_PROCESS | CREATE_NO_WINDOW
             close_fds=True,
         )

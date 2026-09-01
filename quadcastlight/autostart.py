@@ -38,6 +38,18 @@ def interpreter():
     return sys.executable
 
 
+def launch_command():
+    """The command that starts this app, as a list.
+
+    A frozen build has no interpreter and no .pyw beside it: sys.executable is
+    the application itself. Both the Startup launcher and the tray's restart go
+    through here so neither has to know which build it is running in.
+    """
+    if getattr(sys, "frozen", False):
+        return [sys.executable]
+    return [interpreter(), os.path.join(project_dir(), ENTRY_SCRIPT)]
+
+
 def enabled():
     try:
         return os.path.isfile(launcher_path())
@@ -51,7 +63,7 @@ def set_enabled(value):
         if os.path.exists(path):
             os.remove(path)
         return
-    script = os.path.join(project_dir(), ENTRY_SCRIPT)
+    command = " ".join(f'"{part}"' for part in launch_command())
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", newline="\r\n") as launcher:
-        launcher.write(f'@start "" "{interpreter()}" "{script}"\n')
+        launcher.write(f'@start "" {command}\n')
