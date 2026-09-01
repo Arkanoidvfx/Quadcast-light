@@ -11,15 +11,22 @@ The microphone on screen is not a colour swatch. It shows the same frames that
 are going to the device, so it dims when you lower the brightness, turns red
 when Discord mutes, and goes grey when you unplug the real one.
 
-## Requirements
+## Get it
 
-Windows and Python 3.12. Close NGENUITY first: two programs writing to the mic
-fight over it and the light flickers.
+Download `QuadcastLight.exe` from
+[Releases](https://github.com/Arkanoidvfx/Quadcast-light/releases). One file, no
+Python, no installer: put it anywhere and run it.
 
-The lighting lives on a second USB device, `03F0:028C`. If your QuadCast does
-not present it, this will not find anything to talk to.
+Windows will warn that the file is unsigned, because it is. Nothing here is
+code-signed; the certificate costs more than this project is worth.
 
-## Install
+Close NGENUITY first: two programs writing to the mic fight over it and the
+light flickers. The lighting lives on a second USB device, `03F0:028C`. If your
+QuadCast does not present it, this will not find anything to talk to.
+
+## From source
+
+Windows and Python 3.12.
 
 ```
 git clone https://github.com/Arkanoidvfx/Quadcast-light.git
@@ -130,6 +137,18 @@ cyan, magenta, yellow, pink, warmwhite, black, off.
 No microphone needed; the device is faked. `test_protocol.py` also holds a
 six-second smoke test against real hardware, which runs only if you execute that
 file directly.
+
+To build the exe:
+
+```
+.venv\Scripts\pip install pyinstaller
+.venv\Scripts\pyinstaller --noconfirm QuadcastLight.spec
+```
+
+Tagging `v*` builds it on CI and attaches it to the release instead. The spec
+drops the Qt modules the window never loads, which is most of PySide6: leave
+that list alone unless you check the packaged build still starts, because a
+missing QML module fails at runtime and not at build time.
 
 One thread owns the HID handle and writes the current program twenty times a
 second, because the mic falls back to its stored colour if the host goes quiet

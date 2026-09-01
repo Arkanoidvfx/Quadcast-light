@@ -1,0 +1,47 @@
+name: release
+
+# Tag a version and the exe builds here, so a published binary is traceable to
+# a commit rather than to somebody's machine.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller==6.22.2
+      - name: Run tests
+        run: python -m unittest discover -s . -p "test_*.py"
+      - name: Build
+        run: pyinstaller --noconfirm QuadcastLight.spec
+      - name: Check the exe starts
+        # A packaged Qt Quick app fails at runtime, not at build time, when a
+        # QML module did not make it into the bundle. Without a mic present the
+        # app exits after acquiring its single-instance mutex, which is enough
+        # to prove the bundle boots.
+        run: |
+          $process = Start-Process -FilePath dist\QuadcastLight.exe -PassThru
+          Start-Sleep -Seconds 25
+          if (-not $process.HasExited) { $process.Kill() }
+          if (-not (Test-Path dist\QuadcastLight.exe)) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuadcastLight-exe
+          path: dist/QuadcastLight.exe
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: gh release create "${env:GITHUB_REF_NAME}" dist\QuadcastLight.exe --generate-notes --title "${env:GITHUB_REF_NAME}"
+        env:
+          GH_TOKEN: ${{ github.token }}
