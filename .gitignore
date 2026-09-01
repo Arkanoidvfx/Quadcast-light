@@ -1,0 +1,22 @@
+# Virtualenv (redirector-style venv lives in-tree; never commit it)
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Runtime state: streamer/owner pid file, scratch
+.tmp/
+
+# Local logs
+*.log
+logs/
+
+# Editors
+.idea/
+.vscode/
+*.swp

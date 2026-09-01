@@ -1,0 +1,30 @@
+[project]
+name = "quadcastlight"
+version = "2.0.0"
+description = "HyperX QuadCast S lighting control for Windows, with Discord and Twitch automations"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+dependencies = [
+    "hidapi==0.15.0",
+    "PySide6==6.11.2",
+    "twitchio==3.2.2",
+]
+classifiers = [
+    "Environment :: Win32 (MS Windows)",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Hardware",
+]
+
+[project.urls]
+Homepage = "https://github.com/Arkanoidvfx/Quadcast-light"
+
+[project.gui-scripts]
+quadcastlight-gui = "quadcastlight.ui.app:main"
+
+[tool.setuptools]
+packages = ["quadcastlight", "quadcastlight.ui", "quadcastlight.integrations"]
+
+[tool.setuptools.package-data]
+"quadcastlight.ui" = ["qml/*.qml", "qml/qmldir"]
